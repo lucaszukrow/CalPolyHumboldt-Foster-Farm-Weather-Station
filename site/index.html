@@ -3,25 +3,188 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Foster Farm Weather Station</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; color: #1d2a24; }
-    h1 { font-size: 1.4rem; margin-bottom: 0.2rem; }
-    .muted { color: #5f6f67; font-size: 0.9rem; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-    td { padding: 0.4rem 0.6rem; border-bottom: 1px solid #e3e8e5; }
-    td:first-child { color: #5f6f67; }
-    .err { color: #a3302a; }
-  </style>
+  <title>Foster Farm Weather Station | Cal Poly Humboldt</title>
+  <meta name="description" content="Live conditions, history and forecast from the Cal Poly Humboldt Foster Farm weather station in Arcata, California.">
+  <meta name="theme-color" content="#004C46">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.min.css"
+        integrity="sha384-IfV0B7MIOYuO95kO9G5ySKPz/85zqFNOAs8iy4tkK5zd9izhJAB8b7lHrwYqqmYE" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Foster Farm Weather Station</h1>
-  <p class="muted">Connection test page. The real dashboard comes next.</p>
-  <p id="status" class="muted">Loading…</p>
-  <table id="readings"></table>
-  <p class="muted" id="history"></p>
+  <a class="skip" href="#main">Skip to content</a>
 
+  <header class="hero" aria-labelledby="station-name">
+    <div class="wrap hero-grid">
+      <div class="hero-id">
+        <p class="org">Cal Poly Humboldt</p>
+        <h1 id="station-name">Foster Farm Weather Station</h1>
+        <p class="place">Arcata Bottom, Arcata, California</p>
+      </div>
+
+      <div class="hero-now" aria-live="polite">
+        <p class="hero-temp"><span id="now-temp">--</span><span class="deg">°F</span></p>
+        <p class="hero-summary" id="now-summary">Loading current conditions</p>
+        <dl class="hero-pairs">
+          <div><dt>Feels like</dt><dd id="now-feels">--</dd></div>
+          <div><dt>Dew point</dt><dd id="now-dew">--</dd></div>
+          <div><dt>Today's high / low</dt><dd id="now-hilo">--</dd></div>
+        </dl>
+      </div>
+
+      <figure class="compass" aria-labelledby="compass-cap">
+        <svg viewBox="0 0 200 200" role="img" aria-labelledby="compass-title">
+          <title id="compass-title">Wind direction dial</title>
+          <circle cx="100" cy="100" r="86" class="ring"/>
+          <g id="compass-ticks"></g>
+          <text x="100" y="34" class="cardinal">N</text>
+          <text x="170" y="105" class="cardinal">E</text>
+          <text x="100" y="176" class="cardinal">S</text>
+          <text x="30" y="105" class="cardinal">W</text>
+          <g id="compass-needle" transform="rotate(0 100 100)">
+            <path d="M100 12 L111 40 L100 34 L89 40 Z" class="needle"/>
+          </g>
+          <text x="100" y="93" class="c-speed" id="c-speed">--</text>
+          <text x="100" y="128" class="c-unit">mph</text>
+        </svg>
+        <figcaption id="compass-cap">Wind <span id="c-from">--</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="wrap status-row">
+      <p class="status" id="status" data-state="loading">
+        <span class="status-icon" aria-hidden="true"></span>
+        <span id="status-text">Connecting to the station</span>
+      </p>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="wrap conditions" aria-labelledby="cond-h">
+      <h2 id="cond-h" class="visually-hidden">Current conditions</h2>
+      <div class="tiles">
+        <article class="tile">
+          <h3>Wind</h3>
+          <p class="tile-value"><span id="t-wind">--</span><span class="u">mph</span></p>
+          <p class="tile-sub" id="t-wind-sub">&nbsp;</p>
+        </article>
+        <article class="tile">
+          <h3>Humidity</h3>
+          <p class="tile-value"><span id="t-hum">--</span><span class="u">%</span></p>
+          <p class="tile-sub" id="t-hum-sub">&nbsp;</p>
+        </article>
+        <article class="tile">
+          <h3>Pressure</h3>
+          <p class="tile-value"><span id="t-pres">--</span><span class="u">inHg</span></p>
+          <p class="tile-sub" id="t-pres-sub">&nbsp;</p>
+        </article>
+        <article class="tile">
+          <h3>Rain today</h3>
+          <p class="tile-value"><span id="t-rain">--</span><span class="u">in</span></p>
+          <p class="tile-sub" id="t-rain-sub">&nbsp;</p>
+        </article>
+        <article class="tile">
+          <h3>Sunlight</h3>
+          <p class="tile-value"><span id="t-solar">--</span><span class="u">W/m²</span></p>
+          <p class="tile-sub" id="t-solar-sub">&nbsp;</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wrap outlook" aria-labelledby="outlook-h">
+      <div class="radar-col">
+        <div class="section-head">
+          <h2 id="outlook-h">Radar</h2>
+          <div class="radar-controls">
+            <button type="button" class="btn-quiet" id="radar-play" aria-pressed="true">Pause</button>
+            <span class="radar-time" id="radar-time" aria-live="off">--</span>
+          </div>
+        </div>
+        <div id="radar-map" class="radar-map" role="region" aria-label="Radar map around the station"></div>
+        <p class="note">Past hour of precipitation radar. The gold dot marks the station.</p>
+      </div>
+
+      <div class="forecast-col">
+        <div class="section-head"><h2 id="fc-h">7-day forecast</h2></div>
+        <ol class="forecast" id="forecast" aria-labelledby="fc-h">
+          <li class="fc-empty">Loading forecast</li>
+        </ol>
+        <p class="note">Model forecast for this location, not a station measurement.</p>
+      </div>
+    </section>
+
+    <section class="wrap history" aria-labelledby="hist-h">
+      <div class="section-head">
+        <h2 id="hist-h">History</h2>
+        <p class="range-meta" id="range-meta"></p>
+      </div>
+
+      <div class="filters" role="group" aria-label="Time range">
+        <button type="button" class="chip" data-range="1" aria-pressed="true">24 hours</button>
+        <button type="button" class="chip" data-range="3" aria-pressed="false">3 days</button>
+        <button type="button" class="chip" data-range="7" aria-pressed="false">7 days</button>
+        <button type="button" class="chip" data-range="30" aria-pressed="false">30 days</button>
+        <button type="button" class="chip" data-range="all" aria-pressed="false">All</button>
+      </div>
+
+      <div class="charts" id="charts">
+        <figure class="chart" id="ch-temp"><figcaption><h3>Temperature</h3><span class="unit">°F</span><ul class="legend"><li><i class="k k-accent"></i>Air temperature</li><li><i class="k k-muted"></i>Dew point</li></ul></figcaption><div class="plot"></div></figure>
+        <figure class="chart" id="ch-hum"><figcaption><h3>Humidity</h3><span class="unit">%</span></figcaption><div class="plot"></div></figure>
+        <figure class="chart" id="ch-wind"><figcaption><h3>Wind</h3><span class="unit">mph</span><ul class="legend"><li><i class="k k-accent"></i>Speed</li><li><i class="k k-muted"></i>Gust</li></ul></figcaption><div class="plot"></div></figure>
+        <figure class="chart" id="ch-rain"><figcaption><h3>Rainfall</h3><span class="unit" id="rain-unit">in per hour</span></figcaption><div class="plot"></div></figure>
+        <figure class="chart" id="ch-pres"><figcaption><h3>Pressure</h3><span class="unit">inHg, relative</span></figcaption><div class="plot"></div></figure>
+        <figure class="chart" id="ch-solar"><figcaption><h3>Solar radiation</h3><span class="unit">W/m²</span></figcaption><div class="plot"></div></figure>
+      </div>
+    </section>
+
+    <section class="wrap data" aria-labelledby="data-h">
+      <div class="section-head">
+        <h2 id="data-h">Data</h2>
+      </div>
+      <div class="data-grid">
+        <dl class="summary" id="summary"></dl>
+        <div class="data-actions">
+          <button type="button" class="btn" id="dl-csv">Download CSV</button>
+          <button type="button" class="btn btn-ghost" id="dl-json">Download JSON</button>
+          <button type="button" class="btn-quiet" id="toggle-table" aria-expanded="false" aria-controls="table-wrap">Show table</button>
+        </div>
+      </div>
+      <div id="table-wrap" class="table-wrap" hidden>
+        <table id="data-table">
+          <caption class="visually-hidden">Station records for the selected range, newest first</caption>
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+        <p class="note" id="table-note"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap foot-grid">
+      <p>Readings come from an Ambient Weather station at the Cal Poly Humboldt Foster Farm, stored every 5 minutes. Times are Pacific.</p>
+      <p>
+        Forecast: <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> (CC BY 4.0).
+        Radar: <a href="https://www.rainviewer.com/">Weather data by RainViewer</a>.
+        Map: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © <a href="https://carto.com/attributions">CARTO</a>.
+      </p>
+      <p><a href="https://github.com/lucaszukrow/CalPolyHumboldt-Foster-Farm-Weather-Station">Source code on GitHub</a></p>
+    </div>
+  </footer>
+
+  <div class="tooltip" id="tooltip" role="status" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.iife.min.js"
+          integrity="sha384-Gx3t0zdBAuQOuvvmaLZj7HKEiSgWTAs+VdtNY7wt19QDPTDQjFIwAuXDj0zeN00c" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
   <script src="config.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

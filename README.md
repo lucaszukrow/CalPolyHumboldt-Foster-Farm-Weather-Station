@@ -48,6 +48,19 @@ python3 tests/test_fetch_history.py
 cd site && python3 -m http.server 8000   # localhost:8000 is allowed by the Worker's CORS list
 ```
 
+## Dashboard
+
+`site/` is plain HTML, CSS and JS with no build step. Libraries (uPlot for charts, Leaflet for the map) load from jsDelivr with pinned versions and integrity hashes.
+
+- Colors are Cal Poly Humboldt's official palette (Old Growth Green, Chanterelle Gold, Sea Glass, Northern Sky, Sand). Font is Poppins, the university's body typeface.
+- The 24 hour view uses the Worker's `/recent` data. Longer ranges load the history CSVs and append anything newer from `/recent`.
+- Forecast comes from Open-Meteo and radar from RainViewer (past hour only; the free tier caps zoom at 7, so the map upscales radar beyond that).
+- Station location in `site/config.js` is approximate and only used for the forecast and map.
+
+### Known station quirk
+
+The station's `dailyrainin` and `maxdailygust` reset at **10 AM Pacific**, not midnight, which usually means the station or Ambient account time zone is set wrong. The dashboard does not trust those counters for "today": it computes rain and peak gust since Pacific midnight from the 5-minute records. Rain charts and totals use the change in `dailyrainin` between records, which is correct no matter when it resets. Fixing the time zone in the Ambient Weather device settings will make the raw counters match too.
+
 ## Data
 
 - `data/history/YYYY-MM.csv`: one row per station record, months split by UTC. `dateutc` is milliseconds since epoch, `time_utc` is ISO 8601.
