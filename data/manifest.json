@@ -1,0 +1,31 @@
+{
+  "files": [],
+  "columns": [
+    "dateutc",
+    "time_utc",
+    "tempf",
+    "feelsLike",
+    "dewPoint",
+    "humidity",
+    "windspeedmph",
+    "windgustmph",
+    "maxdailygust",
+    "winddir",
+    "windspdmph_avg10m",
+    "winddir_avg10m",
+    "baromrelin",
+    "baromabsin",
+    "hourlyrainin",
+    "eventrainin",
+    "dailyrainin",
+    "24hourrainin",
+    "weeklyrainin",
+    "monthlyrainin",
+    "yearlyrainin",
+    "uv",
+    "solarradiation"
+  ],
+  "records": 0,
+  "first": null,
+  "last": null
+}

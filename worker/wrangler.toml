@@ -1,0 +1,7 @@
+name = "foster-farm-weather"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# Secrets are NOT stored here. They live in the Cloudflare dashboard:
+#   AMBIENT_API_KEY, AMBIENT_APP_KEY, AMBIENT_MAC
+# Deploying from this folder (npx wrangler deploy) keeps existing secrets.

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Foster Farm Weather Station</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; color: #1d2a24; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.2rem; }
+    .muted { color: #5f6f67; font-size: 0.9rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    td { padding: 0.4rem 0.6rem; border-bottom: 1px solid #e3e8e5; }
+    td:first-child { color: #5f6f67; }
+    .err { color: #a3302a; }
+  </style>
+</head>
+<body>
+  <h1>Foster Farm Weather Station</h1>
+  <p class="muted">Connection test page. The real dashboard comes next.</p>
+  <p id="status" class="muted">Loading…</p>
+  <table id="readings"></table>
+  <p class="muted" id="history"></p>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
