@@ -779,9 +779,10 @@ function initMap() {
     center: [cfg.lat, cfg.lon], zoom: 8, minZoom: 5, maxZoom: 11,
     scrollWheelZoom: false, zoomControl: true,
   });
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-    subdomains: "abcd", maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    className: "basemap",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
   L.marker([cfg.lat, cfg.lon], {
     icon: L.divIcon({ className: "", html: '<div class="station-dot"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }),

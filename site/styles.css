@@ -166,6 +166,7 @@ main > section + section { border-top: 1px solid var(--line); }
   background: var(--gold); border: 3px solid var(--green); box-shadow: 0 0 0 2px var(--white);
 }
 .leaflet-container { font-family: var(--font); }
+.basemap { filter: grayscale(.85) contrast(.92) brightness(1.04); }
 
 .forecast li {
   display: grid;
