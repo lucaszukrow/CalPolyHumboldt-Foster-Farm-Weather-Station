@@ -675,7 +675,7 @@ $("toggle-table").addEventListener("click", (e) => {
 
 document.querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => selectRange(b.dataset.range)));
 
-/* ---------------- Forecast (Open-Meteo) ---------------- */
+/* ---------------- Forecast (NWS, Open-Meteo fallback) ---------------- */
 
 const ICONS = {
   sun: '<svg viewBox="0 0 32 32" fill="none" stroke="#E0A100" stroke-width="2" stroke-linecap="round"><circle cx="16" cy="16" r="6"/><path d="M16 3v3M16 26v3M3 16h3M26 16h3M6.8 6.8l2.1 2.1M23.1 23.1l2.1 2.1M6.8 25.2l2.1-2.1M23.1 8.9l2.1-2.1"/></svg>',
@@ -702,70 +702,134 @@ function wmo(code) {
   return ["Mixed", "cloud"];
 }
 
-async function loadForecast() {
-  const list = $("forecast");
+// Official NWS point forecast first (NWS Eureka office, for this exact spot).
+// Falls back to the Open-Meteo model forecast if the NWS service is down.
+function iconFromText(t) {
+  const s = t.toLowerCase();
+  if (s.includes("thunder")) return "storm";
+  if (s.includes("snow") || s.includes("sleet")) return "snow";
+  if (s.includes("rain") || s.includes("shower") || s.includes("drizzle")) return "rain";
+  if (s.includes("fog") || s.includes("haze")) return "fog";
+  if (s.includes("partly") || s.includes("mostly sunny") || s.includes("mostly clear")) return "partly";
+  if (s.includes("sunny") || s.includes("clear")) return "sun";
+  return "cloud";
+}
+
+async function nwsDays() {
+  const pt = await getJSON(`https://api.weather.gov/points/${cfg.lat.toFixed(4)},${cfg.lon.toFixed(4)}`);
+  const fc = await getJSON(pt.properties.forecast);
+  const byDate = new Map();
+  for (const p of fc.properties.periods) {
+    const t = Date.parse(p.startTime);
+    // A night period belongs to the date it starts on (tonight's low pairs with today's high).
+    const key = dayKey(t);
+    if (!byDate.has(key)) byDate.set(key, { key, hi: null, lo: null, pop: 0, text: null, nightText: null });
+    const d = byDate.get(key);
+    const pop = p.probabilityOfPrecipitation?.value ?? 0;
+    d.pop = Math.max(d.pop, pop);
+    if (p.isDaytime) { d.hi = p.temperature; d.text = p.shortForecast; }
+    else { d.lo = p.temperature; d.nightText = p.shortForecast; }
+  }
+  const today = dayKey(Date.now());
+  return [...byDate.values()].slice(0, 7).map((d) => {
+    const text = d.text || d.nightText || "";
+    return {
+      key: d.key, isToday: d.key === today, hi: d.hi, lo: d.lo, pop: d.pop,
+      desc: d.text ? text : `Tonight: ${text}`, icon: iconFromText(text), amt: null,
+    };
+  });
+}
+
+async function openMeteoDays() {
   const params = new URLSearchParams({
     latitude: cfg.lat, longitude: cfg.lon, timezone: TZ, forecast_days: 7,
-    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max",
-    temperature_unit: "fahrenheit", wind_speed_unit: "mph", precipitation_unit: "inch",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum",
+    temperature_unit: "fahrenheit", precipitation_unit: "inch",
   });
-  try {
-    const f = await getJSON(`https://api.open-meteo.com/v1/forecast?${params}`);
-    const d = f.daily;
-    const lo = Math.min(...d.temperature_2m_min), hi = Math.max(...d.temperature_2m_max);
-    const span = Math.max(hi - lo, 1);
-    const wd = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" });
-    list.replaceChildren();
-    d.time.forEach((day, i) => {
-      const [y, m, dd] = day.split("-").map(Number);
-      const [desc, icon] = wmo(d.weather_code[i]);
-      const li = document.createElement("li");
+  const f = await getJSON(`https://api.open-meteo.com/v1/forecast?${params}`);
+  const d = f.daily;
+  const today = dayKey(Date.now());
+  return d.time.map((key, i) => {
+    const [desc, icon] = wmo(d.weather_code[i]);
+    return {
+      key, isToday: key === today, hi: d.temperature_2m_max[i], lo: d.temperature_2m_min[i],
+      pop: d.precipitation_probability_max[i] ?? 0, desc, icon, amt: d.precipitation_sum[i],
+    };
+  });
+}
 
-      const name = document.createElement("span");
-      name.className = "fc-day";
-      name.textContent = i === 0 ? "Today" : wd.format(Date.UTC(y, m - 1, dd, 12));
-
-      const ic = document.createElement("span");
-      ic.className = "fc-icon";
-      ic.innerHTML = ICONS[icon]; // static, trusted markup
-      ic.setAttribute("aria-hidden", "true");
-
-      const tlo = document.createElement("span");
-      tlo.className = "fc-lo";
-      tlo.textContent = `${Math.round(d.temperature_2m_min[i])}°`;
-
-      const bar = document.createElement("span");
-      bar.className = "fc-bar";
-      bar.setAttribute("aria-hidden", "true");
-      const fill = document.createElement("span");
-      fill.style.left = `${((d.temperature_2m_min[i] - lo) / span) * 100}%`;
-      fill.style.right = `${((hi - d.temperature_2m_max[i]) / span) * 100}%`;
-      bar.appendChild(fill);
-
-      const thi = document.createElement("span");
-      thi.className = "fc-hi";
-      thi.textContent = `${Math.round(d.temperature_2m_max[i])}°`;
-
-      const detail = document.createElement("span");
-      detail.className = "fc-detail";
-      const pop = d.precipitation_probability_max[i];
-      const amt = d.precipitation_sum[i];
-      let txt = desc;
-      if (isNum(pop) && pop > 0) txt += `, ${pop}% chance of rain`;
-      if (isNum(amt) && amt >= 0.01) txt += `, ${amt.toFixed(2)} in`;
-      detail.textContent = txt;
-
-      li.setAttribute("aria-label",
-        `${name.textContent}: ${txt}. Low ${tlo.textContent}, high ${thi.textContent}.`);
-      li.append(name, ic, tlo, bar, thi, detail);
-      list.appendChild(li);
-    });
-  } catch {
-    list.replaceChildren();
+function renderForecast(days, source) {
+  const list = $("forecast");
+  const temps = days.flatMap((d) => [d.hi, d.lo]).filter(isNum);
+  const lo = Math.min(...temps), hi = Math.max(...temps);
+  const span = Math.max(hi - lo, 1);
+  const wd = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" });
+  list.replaceChildren();
+  for (const day of days) {
+    const [y, m, dd] = day.key.split("-").map(Number);
     const li = document.createElement("li");
-    li.className = "fc-empty";
-    li.textContent = "Forecast unavailable right now. It will retry in 30 minutes.";
+
+    const name = document.createElement("span");
+    name.className = "fc-day";
+    name.textContent = day.isToday ? "Today" : wd.format(Date.UTC(y, m - 1, dd, 12));
+
+    const ic = document.createElement("span");
+    ic.className = "fc-icon";
+    ic.innerHTML = ICONS[day.icon]; // static, trusted markup
+    ic.setAttribute("aria-hidden", "true");
+
+    const tlo = document.createElement("span");
+    tlo.className = "fc-lo";
+    tlo.textContent = isNum(day.lo) ? `${Math.round(day.lo)}°` : "";
+
+    const bar = document.createElement("span");
+    bar.className = "fc-bar";
+    bar.setAttribute("aria-hidden", "true");
+    const a = isNum(day.lo) ? day.lo : day.hi, b = isNum(day.hi) ? day.hi : day.lo;
+    if (isNum(a) && isNum(b)) {
+      const fill = document.createElement("span");
+      fill.style.left = `${((a - lo) / span) * 100}%`;
+      fill.style.right = `${((hi - b) / span) * 100}%`;
+      if (a === b) fill.style.minWidth = "6px";
+      bar.appendChild(fill);
+    }
+
+    const thi = document.createElement("span");
+    thi.className = "fc-hi";
+    thi.textContent = isNum(day.hi) ? `${Math.round(day.hi)}°` : "";
+
+    const detail = document.createElement("span");
+    detail.className = "fc-detail";
+    let txt = day.desc;
+    if (isNum(day.pop) && day.pop > 0) txt += `, ${day.pop}% chance of rain`;
+    if (isNum(day.amt) && day.amt >= 0.01) txt += `, ${day.amt.toFixed(2)} in`;
+    detail.textContent = txt;
+
+    const loTxt = isNum(day.lo) ? ` Low ${Math.round(day.lo)}°.` : "";
+    const hiTxt = isNum(day.hi) ? ` High ${Math.round(day.hi)}°.` : "";
+    li.setAttribute("aria-label", `${name.textContent}: ${txt}.${hiTxt}${loTxt}`);
+    li.append(name, ic, tlo, bar, thi, detail);
     list.appendChild(li);
+  }
+  $("fc-source").textContent = source === "nws"
+    ? "Official forecast from the National Weather Service office in Eureka for this location."
+    : "The National Weather Service forecast is unavailable, so this is the Open-Meteo model forecast.";
+}
+
+async function loadForecast() {
+  try {
+    renderForecast(await nwsDays(), "nws");
+  } catch {
+    try {
+      renderForecast(await openMeteoDays(), "open-meteo");
+    } catch {
+      const list = $("forecast");
+      list.replaceChildren();
+      const li = document.createElement("li");
+      li.className = "fc-empty";
+      li.textContent = "Forecast unavailable right now. It will retry in 30 minutes.";
+      list.appendChild(li);
+    }
   }
 }
 
