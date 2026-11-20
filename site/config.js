@@ -2,10 +2,9 @@
 window.WEATHER_CONFIG = {
   workerUrl: "https://foster-farm-weather.lucaszukrow.workers.dev",
 
-  // Approximate location, used only for the forecast and radar map.
-  // Foster Avenue area on the Arcata Bottom. Adjust if you want it exact.
-  lat: 40.8795,
-  lon: -124.0985,
+  // Station location (2000 Foster Ave, Arcata). Used for the forecast and radar map.
+  lat: 40.881441,
+  lon: -124.096187,
 
   timezone: "America/Los_Angeles",
   liveRefreshSeconds: 60,    // current conditions

@@ -55,7 +55,7 @@ cd site && python3 -m http.server 8000   # localhost:8000 is allowed by the Work
 - Colors are Cal Poly Humboldt's official palette (Old Growth Green, Chanterelle Gold, Sea Glass, Northern Sky, Sand). Font is Poppins, the university's body typeface.
 - The 24 hour view uses the Worker's `/recent` data. Longer ranges load the history CSVs and append anything newer from `/recent`.
 - Forecast comes from Open-Meteo and radar from RainViewer (past hour only; the free tier caps zoom at 7, so the map upscales radar beyond that).
-- Station location in `site/config.js` is approximate and only used for the forecast and map.
+- Station location (2000 Foster Ave, Arcata) is set in `site/config.js` and used for the forecast and map.
 
 ### Known station quirk
 
