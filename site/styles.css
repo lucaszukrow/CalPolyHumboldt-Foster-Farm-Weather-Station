@@ -116,7 +116,7 @@ button { font: inherit; cursor: pointer; }
 .compass .tick.major { stroke: rgba(255,255,255,.7); stroke-width: 2; }
 .compass .cardinal { fill: var(--sky); font: 600 13px var(--font); text-anchor: middle; dominant-baseline: middle; }
 .compass .needle { fill: var(--gold); }
-#compass-needle { transition: transform .8s cubic-bezier(.3,.7,.3,1); }
+#compass-needle { transform-box: view-box; transform-origin: 100px 100px; transition: transform .8s cubic-bezier(.3,.7,.3,1); }
 .compass .c-speed { fill: var(--white); font: 600 40px var(--font); text-anchor: middle; dominant-baseline: middle; }
 .compass .c-unit { fill: var(--sky); font: 500 13px var(--font); text-anchor: middle; }
 .compass figcaption { margin-top: .4rem; font-size: .95rem; color: var(--sky); }

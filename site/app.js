@@ -189,7 +189,7 @@ function renderCurrent() {
   $("c-speed").textContent = fmt(d.windspeedmph, d.windspeedmph < 10 ? 1 : 0);
   const needle = $("compass-needle");
   needle.style.visibility = calm || !isNum(d.winddir) ? "hidden" : "visible";
-  if (isNum(d.winddir)) needle.setAttribute("transform", `rotate(${d.winddir} 100 100)`);
+  if (isNum(d.winddir)) needle.style.transform = `rotate(${d.winddir}deg)`; // points in from the direction the wind comes from
   $("c-from").textContent = calm ? "calm" : isNum(d.winddir) ? `from ${POINTS[pointIndex(d.winddir)]}` : "--";
 
   // Tiles
