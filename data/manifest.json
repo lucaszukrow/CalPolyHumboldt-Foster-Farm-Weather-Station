@@ -1,5 +1,7 @@
 {
-  "files": [],
+  "files": [
+    "history/2026-11.csv"
+  ],
   "columns": [
     "dateutc",
     "time_utc",
@@ -25,7 +27,7 @@
     "uv",
     "solarradiation"
   ],
-  "records": 0,
-  "first": null,
-  "last": null
+  "records": 2389,
+  "first": "2026-11-12T15:59:00Z",
+  "last": "2026-11-20T23:00:00Z"
 }
