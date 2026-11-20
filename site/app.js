@@ -723,19 +723,30 @@ async function nwsDays() {
     const t = Date.parse(p.startTime);
     // A night period belongs to the date it starts on (tonight's low pairs with today's high).
     const key = dayKey(t);
-    if (!byDate.has(key)) byDate.set(key, { key, hi: null, lo: null, pop: 0, text: null, nightText: null });
+    if (!byDate.has(key)) byDate.set(key, { key, hi: null, lo: null, dayPop: null, nightPop: null, text: null, nightText: null });
     const d = byDate.get(key);
     const pop = p.probabilityOfPrecipitation?.value ?? 0;
-    d.pop = Math.max(d.pop, pop);
-    if (p.isDaytime) { d.hi = p.temperature; d.text = p.shortForecast; }
-    else { d.lo = p.temperature; d.nightText = p.shortForecast; }
+    if (p.isDaytime) { d.hi = p.temperature; d.text = p.shortForecast; d.dayPop = pop; }
+    else { d.lo = p.temperature; d.nightText = p.shortForecast; d.nightPop = pop; }
   }
   const today = dayKey(Date.now());
+  const chance = (n) => (n > 0 ? `, ${n}% chance of rain` : "");
   return [...byDate.values()].slice(0, 7).map((d) => {
-    const text = d.text || d.nightText || "";
+    const isToday = d.key === today;
+    const night = isToday ? "Tonight" : "Night";
+    let desc;
+    if (d.text) {
+      // Daytime wording with its own rain chance; add the night only when it is notably wetter.
+      desc = `${d.text}${chance(d.dayPop)}`;
+      if (d.nightText && (d.nightPop ?? 0) >= 30 && (d.nightPop ?? 0) - (d.dayPop ?? 0) >= 20) {
+        desc += `. ${night}: ${d.nightText}${chance(d.nightPop)}`;
+      }
+    } else {
+      desc = `${night}: ${d.nightText || ""}${chance(d.nightPop)}`;
+    }
     return {
-      key: d.key, isToday: d.key === today, hi: d.hi, lo: d.lo, pop: d.pop,
-      desc: d.text ? text : `Tonight: ${text}`, icon: iconFromText(text), amt: null,
+      key: d.key, isToday, hi: d.hi, lo: d.lo, pop: null, desc,
+      icon: iconFromText(d.text || d.nightText || ""), amt: null,
     };
   });
 }
