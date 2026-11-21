@@ -219,12 +219,11 @@ function renderCurrent() {
   if (isNum(d.hourlyrainin) && d.hourlyrainin > 0) rainSub = `Falling at ${fmt(d.hourlyrainin, 2)} in/hr`;
   else if (d.lastRain) rainSub = `Last rain ${ago(Date.parse(d.lastRain))}`;
   else rainSub = "No rain recorded yet";
-  const first = state.manifest?.first ? Date.parse(state.manifest.first) : null;
-  if (isNum(d.yearlyrainin) && first) {
-    const sameYear = new Date(first).getUTCFullYear() === new Date().getUTCFullYear();
-    rainSub += sameYear
-      ? `. ${fmt(d.yearlyrainin, 2)} in since ${fDate.format(first)}`
-      : `. ${fmt(d.yearlyrainin, 2)} in this year`;
+  // The station's yearly counter. It already read 0.45 in at the first upload (Nov 12, 7:59 AM),
+  // so it can differ from totals added up from the archive.
+  if (isNum(d.yearlyrainin)) {
+    const year = dtf({ year: "numeric" }).format(Date.now());
+    rainSub += `. Station's ${year} total ${fmt(d.yearlyrainin, 2)} in`;
   }
   $("t-rain-sub").textContent = rainSub;
 
